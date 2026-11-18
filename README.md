@@ -32,12 +32,11 @@ Each fault is also run against a no-fault baseline.
 
 Spans follow the OpenTelemetry GenAI semantic conventions:
 
-~~
+```
 invoke_agent orders-assistant   lab.fault, lab.tool_version, lab.eval.outcome
   chat <model>                  gen_ai.usage.input_tokens / output_tokens
   execute_tool <tool>           gen_ai.tool.name, error.type
-~~
-
+```
 - **standard** tracing (paired with v1): span status is ERROR only when a tool raises.
 - **contract** tracing (paired with v2): span status is also ERROR when a tool returns a flagged error.
 
@@ -76,7 +75,7 @@ The evaluation layer is what exposed all of this: `lab.eval.outcome` on the root
 
 Requirements: Python 3.10+, AWS credentials with Bedrock access to an Anthropic model, Docker (optional, for Jaeger).
 
-~~bash
+```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -91,23 +90,21 @@ python run_lab.py --provider mock --runs 1
 # the lab
 export AWS_REGION=us-east-1
 python run_lab.py --provider bedrock --model us.anthropic.claude-sonnet-4-6 --runs 3
-~~
-
+```
 Each run writes `results/<timestamp>-<provider>/` containing `runs.jsonl` (every run with full transcript), `spans.jsonl` (every span), `summary.json` and `summary.md`.
 
 Useful flags: `--faults timeout,truncation`, `--versions v1`, `--instrumentation standard` (run v2 tools with standard tracing to separate the two effects), `--sleep 1` to slow down for rate limits, `LAB_TEMPERATURE=0` for less variance.
 
 ## Layout
 
-~~
+```
 lab/backend.py     fake orders service, data, faults, ground truth
 lab/tools.py       v1 naive and v2 contract tool designs
 lab/agent.py       agent loop, GenAI spans, evaluation layer
 lab/providers.py   Bedrock, Anthropic API, and mock providers
 lab/telemetry.py   OpenTelemetry setup and span capture
 run_lab.py         runs the matrix and writes results
-~~
-
+```
 ## Limits
 
 One task, one domain, small run counts. Model behavior varies between runs and model versions, so rerun before relying on any number here. The v2 tools change several things at once (error flags, pagination, units, ambiguity handling); use `--instrumentation` and `--faults` to isolate effects.
