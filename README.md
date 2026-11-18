@@ -47,7 +47,29 @@ The evaluation result is written onto the root span as `lab.eval.outcome`, so yo
 
 ## Results
 
-_Pending the full run. See `results/` for raw data._
+Model: Claude Sonnet 4.6 on Amazon Bedrock (`us.anthropic.claude-sonnet-4-6`), 3 runs per cell, 42 runs total. Raw data: [`results/20261118T210121Z-bedrock`](results/20261118T210121Z-bedrock).
+
+**Five of six injected faults produced fully healthy traces with v1 tools. Four of them led to a confidently wrong answer in every run (12 of 12), one of them off by 100x. With v2 contract tools, all 18 fault runs were correct.**
+
+| Fault | v1 answer (all 3 runs) | v1 ERROR span | v2 result | v2 ERROR span |
+|---|---|---|---|---|
+| none (baseline) | $7,028.00 correct | no | 3/3 correct | no |
+| timeout | $0.00 | no | 3/3 correct (retried) | yes |
+| rate_limited | $7,028.00 correct (model read the error text and retried) | no | 3/3 correct | yes |
+| truncation | $5,078.50 | no | 3/3 correct (followed next_cursor) | no, handled by contract |
+| unit_drift | $702,800.00 | no | 3/3 correct (units normalized) | no, handled by contract |
+| ambiguous_match | $900.25 (wrong customer) | no | 3/3 correct (exact match) | no, handled by contract |
+| crash | said it could not tell | yes | 3/3 correct (retried) | yes |
+
+Fault runs correct: **v1 3 of 18, v2 18 of 18.** Silent failures (wrong answer, every span OK): **v1 12, v2 0.**
+
+What the data says beyond the headline:
+
+1. **A healthy span says nothing about the answer, in either direction.** v1 recovered from the rate limit only because the model happened to read the error text; the trace looked identical to the four runs that returned wrong numbers.
+2. **Making a failure visible did not fix it.** The v1 crash was the one fault standard tracing caught, and the agent still gave up, because nothing told it the error was retryable. v2's typed `retryable: true` turned the same fault into a correct answer.
+3. **The model was not the constraint.** The same model went from 3 of 18 to 18 of 18 with no prompt change. Only the tool contracts changed.
+
+The evaluation layer is what exposed all of this: `lab.eval.outcome` on the root span is the only signal that separates a silent failure from a success.
 
 ## Run it yourself
 
