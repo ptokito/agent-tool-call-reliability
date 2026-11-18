@@ -63,6 +63,8 @@ Model: Claude Sonnet 4.6 on Amazon Bedrock (`us.anthropic.claude-sonnet-4-6`), 3
 
 Fault runs correct: **v1 3 of 18, v2 18 of 18.** Silent failures (wrong answer, every span OK): **v1 12, v2 0.**
 
+![v1 truncation run: every span OK, answer wrong](docs/silent-failure-truncation.png)
+
 What the data says beyond the headline:
 
 1. **A healthy span says nothing about the answer, in either direction.** v1 recovered from the rate limit only because the model happened to read the error text; the trace looked identical to the four runs that returned wrong numbers.
